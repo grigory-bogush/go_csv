@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,19 +13,21 @@ import (
 )
 
 type IGameRecord struct {
-	Name          string
-	Platform      string
-	Medal         string
-	Complete_time int
-	Genre         string
-	//completed_dlcs []string
+	Name           string
+	Platform       string
+	Medal          string
+	Complete_time  int
+	Score          string
+	Genre          string
+	Completed_dlcs []string
 }
 
 func main() {
-	in_filename := "./assets/beaten_games.csv"
-	out_filename := "./assets/beaten_games.json"
+	in_filename := flag.String("in", "", "input csv filename")
+	out_filename := flag.String("out", "", "output json filename")
+	flag.Parse()
 
-	data, error := ioutil.ReadFile(in_filename)
+	data, error := ioutil.ReadFile(*in_filename)
 
 	if error != nil {
 		fmt.Println("Error reading file. ", error.Error())
@@ -48,19 +51,29 @@ func main() {
 		platform := record[1]
 		medal := record[2]
 		complete_time, err := strconv.Atoi(record[3])
-		genre := record[4]
-		var dlcs_str string = record[5]
+		score := record[4]
+		genre := record[5]
+		var dlcs_str string = record[6]
+
+		var dlcs []string = nil
 
 		if dlcs_str != "" {
+			dlcs = strings.Split(dlcs_str, ",")
+			for i := range dlcs {
+				dlcs[i] = strings.TrimSpace(dlcs[i])
+			}
+
 			fmt.Println(dlcs_str)
 		}
 
 		game_record := IGameRecord{
-			Name:          name,
-			Platform:      platform,
-			Medal:         medal,
-			Complete_time: complete_time,
-			Genre:         genre,
+			Name:           name,
+			Platform:       platform,
+			Medal:          medal,
+			Complete_time:  complete_time,
+			Score:          score,
+			Genre:          genre,
+			Completed_dlcs: dlcs,
 		}
 
 		//json_abc, err := json.Marshal(game_record)
@@ -75,7 +88,7 @@ func main() {
 		log.Fatal("Couldn't convert to json")
 		return
 	}
-	write_result := ioutil.WriteFile(out_filename, json_bytes, 0644)
+	write_result := ioutil.WriteFile(*out_filename, json_bytes, 0644)
 
 	if write_result == nil {
 		fmt.Println("Successfuly wrote json!")
